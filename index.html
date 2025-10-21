@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>词法分析器 - 前后端分离版</title>
+    <!-- 使用在中国大陆访问更快的 CDN -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/tailwindcss/3.4.1/tailwind.min.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b',
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#06b6d4',
+                        light: '#f8fafc',
+                        dark: '#1e293b'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .editor-line {
+                @apply py-1 border-l-2 border-transparent hover:bg-gray-100;
+            }
+            .editor-line-number {
+                @apply inline-block w-8 text-right mr-2 text-gray-400 select-none;
+            }
+            .token-keyword { @apply text-blue-600; }
+            .token-identifier { @apply text-green-600; }
+            .token-number { @apply text-purple-600; }
+            .token-operator { @apply text-orange-600; }
+            .token-delimiter { @apply text-red-600; }
+            .token-comment { @apply text-gray-400; }
+            .token-string { @apply text-pink-600; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">
+                <i class="fa fa-code mr-2 text-primary"></i>词法分析器
+                <span class="text-sm font-normal text-gray-500 ml-2">前后端分离版</span>
+            </h1>
+            <div class="flex space-x-2">
+                <button id="loadExampleBtn" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"><i class="fa fa-file-text-o mr-1"></i>加载示例</button>
+                <button id="clearBtn" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"><i class="fa fa-trash-o mr-1"></i>清空</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- 代码编辑区域 -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="p-3 bg-gray-100 border-b flex justify-between items-center">
+                    <h2 class="font-medium text-gray-700"><i class="fa fa-pencil mr-2 text-primary"></i>代码编辑</h2>
+                    <button id="analyzeBtn" class="px-4 py-1 bg-primary text-white rounded hover:bg-blue-600"><i class="fa fa-play mr-1"></i>分析</button>
+                </div>
+                <div class="relative">
+                    <div id="lineNumbers" class="absolute top-0 left-0 bottom-0 w-12 bg-gray-100 text-right pt-3 pb-3 text-xs text-gray-500 overflow-hidden"></div>
+                    <textarea id="codeEditor" class="w-full h-96 p-3 pl-14 font-mono text-sm bg-white resize-none focus:outline-none" placeholder="请输入代码..."></textarea>
+                </div>
+            </div>
+
+            <!-- 分析结果区域 -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="p-3 bg-gray-100 border-b">
+                    <h2 class="font-medium text-gray-700"><i class="fa fa-list-alt mr-2 text-primary"></i>分析结果</h2>
+                </div>
+                <div id="resultContainer" class="p-4 h-96 overflow-y-auto">
+                    <div id="resultPlaceholder" class="flex flex-col items-center justify-center h-full text-gray-400">
+                        <i class="fa fa-info-circle text-4xl mb-2"></i>
+                        <p>请在左侧输入代码并点击"分析"按钮</p>
+                    </div>
+                    <div id="resultContent" class="hidden">
+                        <div class="mb-4">
+                            <h3 class="font-medium text-gray-700 mb-2">Token 列表</h3>
+                            <div id="tokenList" class="space-y-1"></div>
+                        </div>
+                        <div class="mb-4">
+                            <h3 class="font-medium text-gray-700 mb-2">注释列表</h3>
+                            <div id="commentList" class="space-y-1 bg-gray-50 p-3 rounded font-mono text-sm"></div>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-700 mb-2">语法高亮</h3>
+                            <pre id="highlightedCode" class="font-mono text-sm bg-gray-50 p-3 rounded overflow-x-auto"></pre>
+                        </div>
+                    </div>
+                    <div id="loadingIndicator" class="hidden flex flex-col items-center justify-center h-full">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                        <p class="mt-2 text-gray-500">正在分析代码...</p>
+                    </div>
+                    <div id="errorMessage" class="hidden flex flex-col items-center justify-center h-full text-red-500">
+                        <i class="fa fa-exclamation-triangle text-4xl mb-2"></i>
+                        <p id="errorText"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white mt-6 py-4 border-t">
+        <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>© 2025 词法分析器 | 前后端分离架构</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- 配置区域 ---
+        // 当你在电脑浏览器上测试时，使用 'http://localhost:5000'
+        // 当你用手机在同一个局域网内测试时，请将 'localhost' 替换为你电脑的局域网IP地址
+        // 例如: 'http://192.168.1.10:5000'
+        const BACKEND_HOST = 'http://localhost:5000';
+        const API_BASE_URL = `${BACKEND_HOST}/api`;
+        // ---
+
+        // DOM元素
+        const codeEditor = document.getElementById('codeEditor');
+        const lineNumbers = document.getElementById('lineNumbers');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resultPlaceholder = document.getElementById('resultPlaceholder');
+        const resultContent = document.getElementById('resultContent');
+        const tokenList = document.getElementById('tokenList');
+        const commentList = document.getElementById('commentList');
+        const highlightedCode = document.getElementById('highlightedCode');
+        const loadExampleBtn = document.getElementById('loadExampleBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+
+        function updateLineNumbers() {
+            const lines = codeEditor.value.split('\n');
+            const lineNumbersHtml = lines.map((_, i) => `<div class="text-right pr-2">${i + 1}</div>`).join('');
+            lineNumbers.innerHTML = lineNumbersHtml;
+        }
+
+        codeEditor.addEventListener('input', updateLineNumbers);
+        codeEditor.addEventListener('scroll', () => { lineNumbers.scrollTop = codeEditor.scrollTop; });
+        updateLineNumbers();
+
+        loadExampleBtn.addEventListener('click', async function() {
+            try {
+                showLoading();
+                const response = await fetch(`${API_BASE_URL}/example`);
+                const data = await response.json();
+                if (data.success) {
+                    codeEditor.value = data.code;
+                    updateLineNumbers();
+                    hideAllMessages();
+                    showPlaceholder();
+                } else {
+                    showError(data.error || '加载示例代码失败');
+                }
+            } catch (error) {
+                showError('网络错误，无法加载示例代码');
+                console.error(error);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        clearBtn.addEventListener('click', function() {
+            codeEditor.value = '';
+            updateLineNumbers();
+            hideAllMessages();
+            showPlaceholder();
+        });
+
+        analyzeBtn.addEventListener('click', async function() {
+            const code = codeEditor.value;
+            if (!code.trim()) {
+                alert('请输入代码');
+                return;
+            }
+            try {
+                showLoading();
+                const response = await fetch(`${API_BASE_URL}/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code }),
+                });
+                const data = await response.json();
+                if (data.success) {
+                    displayResults(data, code);
+                    hideAllMessages();
+                    showResult();
+                } else {
+                    showError(data.error || '分析失败');
+                }
+            } catch (error) {
+                showError('网络错误，无法连接到服务器');
+                console.error(error);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        function displayResults(data, code) {
+            const { tokens, comments } = data;
+            tokenList.innerHTML = '';
+            if (tokens && tokens.length > 0) {
+                tokens.forEach(token => {
+                    const tokenItem = document.createElement('div');
+                    tokenItem.className = 'flex items-center p-2 border-b border-gray-100 hover:bg-gray-50';
+                    const tokenValue = document.createElement('span');
+                    tokenValue.className = `inline-block w-28 font-medium text-sm ${getTokenTypeClass(token.type)}`;
+                    tokenValue.textContent = token.value;
+                    const tokenTypeLabel = document.createElement('span');
+                    tokenTypeLabel.className = 'text-xs text-gray-500 w-24';
+                    tokenTypeLabel.textContent = `(${token.type})`;
+                    const tokenCode = document.createElement('span');
+                    tokenCode.className = 'text-sm text-gray-600';
+                    tokenCode.textContent = `种别码: ${token.code}`;
+                    tokenItem.appendChild(tokenValue);
+                    tokenItem.appendChild(tokenTypeLabel);
+                    tokenItem.appendChild(tokenCode);
+                    tokenList.appendChild(tokenItem);
+                });
+            } else {
+                tokenList.innerHTML = '<p class="text-gray-400">未识别到 Token。</p>';
+            }
+
+            commentList.innerHTML = '';
+            if (comments && comments.length > 0) {
+                comments.forEach(comment => {
+                    const commentItem = document.createElement('div');
+                    commentItem.className = 'p-1 text-gray-600';
+                    commentItem.textContent = comment.value;
+                    commentList.appendChild(commentItem);
+                });
+            } else {
+                commentList.innerHTML = '<p class="text-gray-400">没有发现注释。</p>';
+            }
+            highlightedCode.innerHTML = highlightCode(code, tokens, comments);
+        }
+
+        function getTokenTypeClass(type) {
+            switch (type) {
+                case 'keyword': return 'token-keyword';
+                case 'identifier': return 'token-identifier';
+                case 'number': return 'token-number';
+                case 'operator': return 'token-operator';
+                default: return 'text-gray-800';
+            }
+        }
+
+        function highlightCode(code, tokens, comments) {
+            let html = '';
+            let lastIndex = 0;
+            const allTokens = [...tokens, ...comments].sort((a, b) => (a.start || 0) - (b.start || 0));
+
+            // 转义HTML函数
+            const escapeHtml = (unsafe) => 
+                unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            // 基于token和comment进行高亮，而不是正则
+            for (const token of allTokens) {
+                if (token.start === undefined) continue; // 跳过没有位置信息的
+                // 添加token之前的普通文本
+                html += escapeHtml(code.substring(lastIndex, token.start));
+                // 添加高亮的token
+                const tokenClass = token.type.includes('comment') ? 'token-comment' : getTokenTypeClass(token.type);
+                html += `<span class="${tokenClass}">${escapeHtml(token.value)}</span>`;
+                lastIndex = token.end || (token.start + token.value.length);
+            }
+            // 添加最后一个token之后剩余的文本
+            html += escapeHtml(code.substring(lastIndex));
+
+            return html;
+        }
+
+        function hideAllMessages() {
+            resultPlaceholder.classList.add('hidden');
+            resultContent.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+        }
+
+        function showPlaceholder() { resultPlaceholder.classList.remove('hidden'); }
+        function showResult() { resultContent.classList.remove('hidden'); }
+        function showError(message) {
+            hideAllMessages();
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+        function showLoading() {
+            hideAllMessages();
+            loadingIndicator.classList.remove('hidden');
+        }
+        function hideLoading() { loadingIndicator.classList.add('hidden'); }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLineNumbers();
+        });
+    </script>
+</body>
+</html>
