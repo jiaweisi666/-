@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>词法分析器 - 前后端分离版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -42,242 +42,246 @@
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <header class="bg-white shadow-sm">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-800">
-                <i class="fa fa-code mr-2 text-primary"></i>词法分析器
-                <span class="text-sm font-normal text-gray-500 ml-2">前后端分离版</span>
-            </h1>
-            <div class="flex space-x-2">
-                <button id="loadExampleBtn" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">
-                    <i class="fa fa-file-text-o mr-1"></i>加载示例
-                </button>
-                <button id="clearBtn" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">
-                    <i class="fa fa-trash-o mr-1"></i>清空
-                </button>
-            </div>
+<header class="bg-white shadow-sm">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-800">
+            <i class="fa fa-code mr-2 text-primary"></i>词法分析器
+            <span class="text-sm font-normal text-gray-500 ml-2">前后端分离版</span>
+        </h1>
+        <div class="flex space-x-2">
+            <button id="loadExampleBtn" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">
+                <i class="fa fa-file-text-o mr-1"></i>加载示例
+            </button>
+            <button id="clearBtn" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">
+                <i class="fa fa-trash-o mr-1"></i>清空
+            </button>
         </div>
-    </header>
+    </div>
+</header>
 
-    <main class="container mx-auto px-4 py-6">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- 编辑区 -->
-            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div class="p-3 bg-gray-100 border-b flex justify-between items-center">
-                    <h2 class="font-medium text-gray-700">
-                        <i class="fa fa-pencil mr-2 text-primary"></i>代码编辑
-                    </h2>
-                    <button id="analyzeBtn" class="px-4 py-1 bg-primary text-white rounded hover:bg-blue-600">
-                        <i class="fa fa-play mr-1"></i>分析
-                    </button>
-                </div>
-                <div class="relative">
-                    <div id="lineNumbers" class="absolute top-0 left-0 bottom-0 w-12 bg-gray-100 text-right pt-3 pb-3 text-xs text-gray-500 overflow-hidden"></div>
-                    <textarea id="codeEditor" class="w-full h-96 p-3 pl-12 font-mono text-sm bg-white resize-none focus:outline-none" placeholder="请输入代码..."></textarea>
-                </div>
+<main class="container mx-auto px-4 py-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 编辑区 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div class="p-3 bg-gray-100 border-b flex justify-between items-center">
+                <h2 class="font-medium text-gray-700">
+                    <i class="fa fa-pencil mr-2 text-primary"></i>代码编辑
+                </h2>
+                <button id="analyzeBtn" class="px-4 py-1 bg-primary text-white rounded hover:bg-blue-600">
+                    <i class="fa fa-play mr-1"></i>分析
+                </button>
             </div>
-
-            <!-- 结果区 -->
-            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div class="p-3 bg-gray-100 border-b">
-                    <h2 class="font-medium text-gray-700">
-                        <i class="fa fa-list-alt mr-2 text-primary"></i>分析结果
-                    </h2>
-                </div>
-                <div id="resultContainer" class="p-4 h-96 overflow-y-auto">
-                    <div id="resultPlaceholder" class="flex flex-col items-center justify-center h-full text-gray-400">
-                        <i class="fa fa-info-circle text-4xl mb-2"></i>
-                        <p>请在左侧输入代码并点击"分析"按钮</p>
-                    </div>
-                    <div id="resultContent" class="hidden">
-                        <div class="mb-4">
-                            <h3 class="font-medium text-gray-700 mb-2">Token 列表</h3>
-                            <div id="tokenList" class="space-y-1"></div>
-                        </div>
-                        <div class="mb-4">
-                            <h3 class="font-medium text-gray-700 mb-2">注释列表</h3>
-                            <div id="commentList" class="space-y-1"></div>
-                        </div>
-                        <div>
-                            <h3 class="font-medium text-gray-700 mb-2">语法高亮</h3>
-                            <pre id="highlightedCode" class="font-mono text-sm bg-gray-50 p-3 rounded overflow-x-auto"></pre>
-                        </div>
-                    </div>
-                    <div id="loadingIndicator" class="hidden flex flex-col items-center justify-center h-full">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                        <p class="mt-2 text-gray-500">正在分析代码...</p>
-                    </div>
-                    <div id="errorMessage" class="hidden flex flex-col items-center justify-center h-full text-red-500">
-                        <i class="fa fa-exclamation-triangle text-4xl mb-2"></i>
-                        <p id="errorText"></p>
-                    </div>
-                </div>
+            <div class="relative">
+                <div id="lineNumbers" class="absolute top-0 left-0 bottom-0 w-12 bg-gray-100 text-right pt-3 pb-3 text-xs text-gray-500 overflow-hidden"></div>
+                <textarea id="codeEditor" class="w-full h-96 p-3 pl-12 font-mono text-sm bg-white resize-none focus:outline-none" placeholder="请输入代码..."></textarea>
             </div>
         </div>
 
-        <!-- ✅ 种别码说明表（完整保留） -->
-        <div class="mt-6 bg-white rounded-lg shadow-sm overflow-hidden">
+        <!-- 结果区 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
             <div class="p-3 bg-gray-100 border-b">
                 <h2 class="font-medium text-gray-700">
-                    <i class="fa fa-book mr-2 text-primary"></i>种别码说明
+                    <i class="fa fa-list-alt mr-2 text-primary"></i>分析结果
                 </h2>
             </div>
-            <div class="p-4 overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead>
-                        <tr>
-                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">单词符号</th>
-                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">种别码</th>
-                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">单词符号</th>
-                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">种别码</th>
-                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">单词符号</th>
-                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">种别码</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200 text-sm text-gray-700">
-                        <tr><td class="px-6 py-2">begin</td><td class="px-6 py-2">1</td><td>double</td><td>12</td><td>:=</td><td>23</td></tr>
-                        <tr><td>if</td><td>2</td><td>char</td><td>13</td><td>&lt;</td><td>24</td></tr>
-                        <tr><td>then</td><td>3</td><td>break</td><td>14</td><td>&lt;&gt;</td><td>25</td></tr>
-                        <tr><td>while</td><td>4</td><td>continue</td><td>15</td><td>&lt;=</td><td>26</td></tr>
-                        <tr><td>do</td><td>5</td><td>ID</td><td>16</td><td>&gt;</td><td>27</td></tr>
-                        <tr><td>end</td><td>6</td><td>NUM</td><td>17</td><td>&gt;=</td><td>28</td></tr>
-                        <tr><td>main</td><td>7</td><td>+</td><td>18</td><td>=</td><td>29</td></tr>
-                        <tr><td>int</td><td>8</td><td>-</td><td>19</td><td>==</td><td>30</td></tr>
-                        <tr><td>float</td><td>9</td><td>*</td><td>20</td><td>;</td><td>31</td></tr>
-                        <tr><td>for</td><td>10</td><td>/</td><td>21</td><td>(</td><td>32</td></tr>
-                        <tr><td>else</td><td>11</td><td>%</td><td>22</td><td>)</td><td>33</td></tr>
-                    </tbody>
-                </table>
+            <div id="resultContainer" class="p-4 h-96 overflow-y-auto">
+                <div id="resultPlaceholder" class="flex flex-col items-center justify-center h-full text-gray-400">
+                    <i class="fa fa-info-circle text-4xl mb-2"></i>
+                    <p>请在左侧输入代码并点击"分析"按钮</p>
+                </div>
+                <div id="resultContent" class="hidden">
+                    <div class="mb-4">
+                        <h3 class="font-medium text-gray-700 mb-2">Token 列表</h3>
+                        <div id="tokenList" class="space-y-1"></div>
+                    </div>
+                    <div class="mb-4">
+                        <h3 class="font-medium text-gray-700 mb-2">注释列表</h3>
+                        <div id="commentList" class="space-y-1"></div>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-700 mb-2">语法分析结果</h3>
+                        <div id="parseResult" class="p-3 rounded bg-gray-50 text-sm"></div>
+                    </div>
+                </div>
+                <div id="loadingIndicator" class="hidden flex flex-col items-center justify-center h-full">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <p class="mt-2 text-gray-500">正在分析代码...</p>
+                </div>
+                <div id="errorMessage" class="hidden flex flex-col items-center justify-center h-full text-red-500">
+                    <i class="fa fa-exclamation-triangle text-4xl mb-2"></i>
+                    <p id="errorText"></p>
+                </div>
             </div>
         </div>
-    </main>
+    </div>
 
-    <footer class="bg-white mt-6 py-4 border-t">
-        <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
-            <p>© 2025 词法分析器 | 前后端分离架构</p>
+    <!-- 种别码说明表（保持原样） -->
+    <div class="mt-6 bg-white rounded-lg shadow-sm overflow-hidden">
+        <div class="p-3 bg-gray-100 border-b">
+            <h2 class="font-medium text-gray-700">
+                <i class="fa fa-book mr-2 text-primary"></i>种别码说明
+            </h2>
         </div>
-    </footer>
+        <div class="p-4 overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">单词符号</th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">种别码</th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">单词符号</th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">种别码</th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">单词符号</th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">种别码</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200 text-sm text-gray-700">
+                    <tr><td class="px-6 py-2">begin</td><td class="px-6 py-2">1</td><td>double</td><td>12</td><td>:=</td><td>23</td></tr>
+                    <tr><td>if</td><td>2</td><td>char</td><td>13</td><td>&lt;</td><td>24</td></tr>
+                    <tr><td>then</td><td>3</td><td>break</td><td>14</td><td>&lt;&gt;</td><td>25</td></tr>
+                    <tr><td>while</td><td>4</td><td>continue</td><td>15</td><td>&lt;=</td><td>26</td></tr>
+                    <tr><td>do</td><td>5</td><td>ID</td><td>16</td><td>&gt;</td><td>27</td></tr>
+                    <tr><td>end</td><td>6</td><td>NUM</td><td>17</td><td>&gt;=</td><td>28</td></tr>
+                    <tr><td>main</td><td>7</td><td>+</td><td>18</td><td>=</td><td>29</td></tr>
+                    <tr><td>int</td><td>8</td><td>-</td><td>19</td><td>==</td><td>30</td></tr>
+                    <tr><td>float</td><td>9</td><td>*</td><td>20</td><td>;</td><td>31</td></tr>
+                    <tr><td>for</td><td>10</td><td>/</td><td>21</td><td>(</td><td>32</td></tr>
+                    <tr><td>else</td><td>11</td><td>%</td><td>22</td><td>)</td><td>33</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
 
-    <!-- 脚本 -->
-    <script>
-        const codeEditor = document.getElementById('codeEditor');
-        const lineNumbers = document.getElementById('lineNumbers');
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const resultPlaceholder = document.getElementById('resultPlaceholder');
-        const resultContent = document.getElementById('resultContent');
-        const tokenList = document.getElementById('tokenList');
-        const commentList = document.getElementById('commentList');
-        const highlightedCode = document.getElementById('highlightedCode');
-        const loadExampleBtn = document.getElementById('loadExampleBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const loadingIndicator = document.getElementById('loadingIndicator');
-        const errorMessage = document.getElementById('errorMessage');
-        const errorText = document.getElementById('errorText');
-        const API_BASE_URL = 'https://my-lexer-api.onrender.com/api'; // 替换为你的 Render API 地址
+<footer class="bg-white mt-6 py-4 border-t">
+    <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+        <p>© 2025 词法分析器 | 前后端分离架构</p>
+    </div>
+</footer>
 
-        function updateLineNumbers() {
-            const lines = codeEditor.value.split('\n');
-            lineNumbers.innerHTML = lines.map((_, i) => `<div class="px-2 py-1">${i + 1}</div>`).join('');
-        }
-        codeEditor.addEventListener('input', updateLineNumbers);
+<!-- 脚本 -->
+<script>
+    const codeEditor = document.getElementById('codeEditor');
+    const lineNumbers = document.getElementById('lineNumbers');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const resultPlaceholder = document.getElementById('resultPlaceholder');
+    const resultContent = document.getElementById('resultContent');
+    const tokenList = document.getElementById('tokenList');
+    const commentList = document.getElementById('commentList');
+    const parseResult = document.getElementById('parseResult');
+    const loadExampleBtn = document.getElementById('loadExampleBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const errorMessage = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+
+    // 使用相对路径，方便本地运行（Flask 默认 host:0.0.0.0:5000）
+    // 本地开发时，请使用完整的 URL。部署到云端时，可以改回相对路径 '/api' 或云端服务的 URL。
+    const API_BASE_URL = 'https://my-lexer-api.onrender.com/api';
+
+    function updateLineNumbers() {
+        const lines = codeEditor.value.split('\n');
+        lineNumbers.innerHTML = lines.map((_, i) => `<div class="px-2 py-1">${i + 1}</div>`).join('');
+    }
+    codeEditor.addEventListener('input', updateLineNumbers);
+    updateLineNumbers();
+
+    loadExampleBtn.addEventListener('click', async () => {
+        try {
+            showLoading();
+            const res = await fetch(`${API_BASE_URL}/example`);
+            const data = await res.json();
+            if (data.success) {
+                codeEditor.value = data.code;
+                updateLineNumbers();
+                hideAllMessages();
+                showPlaceholder();
+            } else showError(data.error);
+        } catch (err) { showError('加载示例失败'); } finally { hideLoading(); }
+    });
+
+    clearBtn.addEventListener('click', () => {
+        codeEditor.value = '';
         updateLineNumbers();
+        hideAllMessages();
+        showPlaceholder();
+    });
 
-        loadExampleBtn.addEventListener('click', async () => {
-            try {
-                showLoading();
-                const res = await fetch(`${API_BASE_URL}/example`);
-                const data = await res.json();
-                if (data.success) {
-                    codeEditor.value = data.code;
-                    updateLineNumbers();
-                    hideAllMessages();
-                    showPlaceholder();
-                } else showError(data.error);
-            } catch { showError('加载示例失败'); } finally { hideLoading(); }
-        });
-
-        clearBtn.addEventListener('click', () => {
-            codeEditor.value = '';
-            updateLineNumbers();
-            hideAllMessages();
-            showPlaceholder();
-        });
-
-        analyzeBtn.addEventListener('click', async () => {
-            const code = codeEditor.value;
-            if (!code.trim()) return alert('请输入代码');
-            try {
-                showLoading();
-                const res = await fetch(`${API_BASE_URL}/analyze`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    displayResults(data.tokens, data.comments, code);
-                    hideAllMessages();
-                    showResult();
-                } else showError(data.error);
-            } catch { showError('无法连接服务器'); } finally { hideLoading(); }
-        });
-
-        function displayResults(tokens, comments, code) {
-            tokenList.innerHTML = '';
-            tokens.forEach(t => {
-                const el = document.createElement('div');
-                el.className = 'flex items-center p-2 border-b border-gray-100 hover:bg-gray-50';
-                el.innerHTML = `<span class="inline-block w-24 font-medium ${getTokenTypeClass(t.type)}">${t.value}</span>
-                                <span class="text-gray-500">种别码: ${t.code}</span>`;
-                tokenList.appendChild(el);
+    analyzeBtn.addEventListener('click', async () => {
+        const code = codeEditor.value;
+        if (!code.trim()) return alert('请输入代码');
+        try {
+            showLoading();
+            const res = await fetch(`${API_BASE_URL}/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
             });
+            const data = await res.json();
+            if (data.success) {
+                displayResults(data.tokens, data.comments, data.parse);
+                hideAllMessages();
+                showResult();
+            } else showError(data.error);
+        } catch (err) { showError('无法连接服务器'); } finally { hideLoading(); }
+    });
 
-            commentList.innerHTML = '';
-            if (comments.length > 0) {
-                comments.forEach(c => {
-                    const el = document.createElement('div');
-                    el.className = 'p-2 border-b border-gray-100 text-sm text-gray-500 italic';
-                    el.innerHTML = `<i class="fa fa-comment-o mr-2 text-gray-400"></i>${c.value}`;
-                    commentList.appendChild(el);
-                });
-            } else commentList.innerHTML = '<p class="text-gray-400 text-sm">无注释</p>';
+    function displayResults(tokens, comments, parse, code) {
+        tokenList.innerHTML = '';
+        tokens.forEach(t => {
+            // 跳过 EOF 伪标记显示
+            if (t.type === 'eof' || t.value === 'EOF') return;
+            const el = document.createElement('div');
+            el.className = 'flex items-center p-2 border-b border-gray-100 hover:bg-gray-50';
+            el.innerHTML = `<span class="inline-block w-36 font-medium ${getTokenTypeClass(t.type)}">${t.value}</span>
+                            <span class="text-gray-500">种别码: ${t.code}</span>`;
+            tokenList.appendChild(el);
+        });
 
-            highlightedCode.innerHTML = highlightCode(code);
-        }
+        commentList.innerHTML = '';
+        if (comments && comments.length > 0) {
+            comments.forEach(c => {
+                const el = document.createElement('div');
+                el.className = 'p-2 border-b border-gray-100 text-sm text-gray-500 italic';
+                el.innerHTML = `<i class="fa fa-comment-o mr-2 text-gray-400"></i>${c.value}`;
+                commentList.appendChild(el);
+            });
+        } else commentList.innerHTML = '<p class="text-gray-400 text-sm">无注释</p>';
 
-        function getTokenTypeClass(t) {
-            switch (t) {
-                case 'keyword': return 'token-keyword';
-                case 'identifier': return 'token-identifier';
-                case 'number': return 'token-number';
-                case 'operator': return 'token-operator';
-                default: return '';
+        // 显示语法分析结果（替代原来的语法高亮区域）
+        if (parse && parse.success) {
+            parseResult.innerHTML = `<div class="text-success font-medium">success — 语法分析通过</div>`;
+            parseResult.classList.remove('bg-red-50');
+            parseResult.classList.add('bg-green-50');
+        } else {
+            let msg = 'error — 语法分析失败';
+            if (parse && parse.error) {
+                msg += `：${parse.error}`;
+                if (parse.pos !== undefined) msg += ` （token index: ${parse.pos}）`;
             }
+            parseResult.innerHTML = `<div class="text-danger font-medium">${msg}</div>`;
+            parseResult.classList.remove('bg-green-50');
+            parseResult.classList.add('bg-red-50');
         }
+    }
 
-        function highlightCode(code) {
-            let e = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            e = e.replace(/(\/\*[\s\S]*?\*\/)/g,'<span class="token-comment">$1</span>');
-            e = e.replace(/(\/\/.*$)/gm,'<span class="token-comment">$1</span>');
-            e = e.replace(/(".*?")/g,'<span class="token-string">$1</span>');
-            e = e.replace(/('.*?')/g,'<span class="token-string">$1</span>');
-            const keywords=['begin','if','then','while','do','end','main','int','float','for','else','double','char','break','continue'];
-            e=e.replace(new RegExp(`\\b(${keywords.join('|')})\\b`,'g'),'<span class="token-keyword">$1</span>');
-            e=e.replace(/\b\d+\b/g,'<span class="token-number">$0</span>');
-            const ops=[':=','<>','<=','>=','==','+','-','*','/','%','<','>','=',';','(',')','{','}','#'];
-            const reg=new RegExp(`(${ops.map(o=>o.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')})`,'g');
-            e=e.replace(reg,'<span class="token-operator">$1</span>');
-            return e;
+    function getTokenTypeClass(t) {
+        switch (t) {
+            case 'keyword': return 'token-keyword';
+            case 'identifier': return 'token-identifier';
+            case 'number': return 'token-number';
+            case 'operator': return 'token-operator';
+            default: return '';
         }
+    }
 
-        function hideAllMessages(){resultPlaceholder.classList.add('hidden');resultContent.classList.add('hidden');errorMessage.classList.add('hidden');}
-        function showPlaceholder(){resultPlaceholder.classList.remove('hidden');}
-        function showResult(){resultContent.classList.remove('hidden');}
-        function showError(msg){errorText.textContent=msg;errorMessage.classList.remove('hidden');}
-        function showLoading(){hideAllMessages();loadingIndicator.classList.remove('hidden');}
-        function hideLoading(){loadingIndicator.classList.add('hidden');}
+    function hideAllMessages(){resultPlaceholder.classList.add('hidden');resultContent.classList.add('hidden');errorMessage.classList.add('hidden');}
+    function showPlaceholder(){resultPlaceholder.classList.remove('hidden');}
+    function showResult(){resultContent.classList.remove('hidden');}
+    function showError(msg){errorText.textContent=msg;errorMessage.classList.remove('hidden');}
+    function showLoading(){hideAllMessages();loadingIndicator.classList.remove('hidden');}
+    function hideLoading(){loadingIndicator.classList.add('hidden');}
 
-        document.addEventListener('DOMContentLoaded',updateLineNumbers);
-    </script>
+    document.addEventListener('DOMContentLoaded',updateLineNumbers);
+</script>
 </body>
 </html>

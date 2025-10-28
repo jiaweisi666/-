@@ -28,7 +28,7 @@ def test_analyze_api():
             print(f"分析成功，找到 {len(data['tokens'])} 个token")
             for i, token in enumerate(data['tokens'][:10]):  # 只显示前10个
                 print(f"  {i + 1}. {token['value']} (种别码: {token['code']}, 类型: {token['type']})")
-            if len(data['tokens'] > 10:
+            if len(data['tokens']) > 10:
                 print(f"  ... 还有 {len(data['tokens']) - 10} 个token")
     except Exception as e:
         print(f"测试失败: {e}")
