@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from lexer import Lexer
+from lexer import Lexerapp.py
 
 app = Flask(__name__)
 CORS(app)  # 允许跨域请求
